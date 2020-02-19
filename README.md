@@ -1,6 +1,6 @@
-# SwiftUI Project
+# Calculator
 
-**Project description.**
+**Recreating the iOS Calculator app in SwiftUI.**
 
 ![](gif.gif)
 

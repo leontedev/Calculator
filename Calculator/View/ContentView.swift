@@ -11,13 +11,32 @@ import Combine
 
 class UserCalculator: ObservableObject {
     @Published var display: String = "0"
+    @Published var currentOperator: CalculatorButton?
     var previouslyPressed: CalculatorButton = .ac
     var leftMember: Double = 0
     var rightMember: Double = 0
     var isLeftMemberFilled: Bool = false
-    var currentOperator: CalculatorButton = .plus
+    var isDecimalNumber: Bool = false
+    var decimalPlace: Double = 10
     
     func buttonPressed(button: CalculatorButton) {
+        func compute(input: Double) -> Double {
+            var output = 0.0
+            if !isDecimalNumber {
+                output = input * 10 + Double(button.title)!
+            } else {
+                output = input + Double(button.title)! / decimalPlace
+                decimalPlace *= 10
+            }
+            
+            return output
+        }
+        
+        func disableDecimal() {
+            isDecimalNumber = false
+            decimalPlace = 10
+        }
+        
         previouslyPressed = button
         
         switch button {
@@ -26,33 +45,65 @@ class UserCalculator: ObservableObject {
             leftMember = 0.0
             rightMember = 0.0
             isLeftMemberFilled = false
+            currentOperator = nil
+            disableDecimal()
         case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine:
             if !isLeftMemberFilled {
-                leftMember = leftMember * 10 + Double(button.title)!
+                leftMember = compute(input: leftMember)
                 display = String(format: "%g", leftMember)
             } else {
-                rightMember = rightMember * 10 + Double(button.title)!
+                rightMember = compute(input: rightMember)
                 display = String(format: "%g", rightMember)
             }
-        case .plus, .minus, .multiply, .divide:
-            isLeftMemberFilled = true
-            currentOperator = button
-        case .equals:
-            var result: Double = 0.0
-            
-            switch currentOperator {
-            case .plus:
-                result = leftMember + rightMember
-            case .multiply:
-                result = leftMember * rightMember
-            case .divide:
-                result = leftMember / rightMember
-            case .minus:
-                result = leftMember - rightMember
-            default:
-                result = leftMember + rightMember
+        case .decimal:
+            isDecimalNumber = true
+            display += "."
+        case .percent:
+            if isLeftMemberFilled {
+                rightMember = rightMember / 100.0
+                display = String(format: "%g", rightMember)
+            } else {
+                leftMember = leftMember / 100.0
+                display = String(format: "%g", leftMember)
             }
-            display = String(format: "%g", result)
+        case .plusminus:
+            if isLeftMemberFilled {
+                rightMember = rightMember * -1
+                display = String(format: "%g", rightMember)
+            } else {
+                leftMember = leftMember * -1
+                display = String(format: "%g", leftMember)
+            }
+        case .plus, .minus, .multiply, .divide:
+            currentOperator = button
+            if isLeftMemberFilled {
+                
+            } else {
+                
+            }
+            isLeftMemberFilled = true
+            disableDecimal()
+        case .equals:
+            if isLeftMemberFilled {
+                var result: Double = 0.0
+                
+                switch currentOperator {
+                case .plus:
+                    result = leftMember + rightMember
+                case .multiply:
+                    result = leftMember * rightMember
+                case .divide:
+                    result = leftMember / rightMember
+                case .minus:
+                    result = leftMember - rightMember
+                default:
+                    result = leftMember + rightMember
+                }
+                display = String(format: "%g", result)
+                leftMember = result
+                rightMember = 0.0
+                disableDecimal()
+            }
         default:
             display = "0"
         }
@@ -91,10 +142,10 @@ struct ContentView: View {
                                 self.calculator.buttonPressed(button: button)
                             }) {
                                 Text(button.title)
-                                    .font(.system(size: 40))
-                                    .foregroundColor(Color.white)
+                                    .font(.system(size: 32))
+                                    .foregroundColor(self.calculator.currentOperator == button ? button.backgroundColor : button.foregroundColor)
                                     .frame(width: self.buttonWidth(for: button), height: self.buttonHeight())
-                                    .background(button.backgroundColor)
+                                    .background(self.calculator.currentOperator == button ? Color.white : button.backgroundColor)
                                     .cornerRadius(self.buttonHeight())
                             }
                             
@@ -107,7 +158,7 @@ struct ContentView: View {
     }
     
     func buttonHeight() -> CGFloat {
-        return (UIScreen.main.bounds.width - 5*12) / 4
+        return (UIScreen.main.bounds.width - 5 * 12) / 4
     }
     
     func buttonWidth(for button: CalculatorButton) -> CGFloat {

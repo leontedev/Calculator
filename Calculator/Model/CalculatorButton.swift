@@ -45,4 +45,18 @@ enum CalculatorButton {
             default: return Color(.darkGray)
         }
     }
+    
+    var foregroundColor: Color {
+        switch self {
+            case .ac, .plusminus, .percent: return Color(.black)
+            default: return Color.white
+        }
+    }
+    
+    var fontSize: Int {
+        switch self {
+            case .ac, .plusminus, .percent: return 30
+            default: return 40
+        }
+    }
 }
